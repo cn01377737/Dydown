@@ -1,0 +1,38 @@
+# Core dependencies
+requests==2.31.0          # HTTP 请求库
+pyyaml==6.0.1            # YAML 配置支持
+rich==13.7.0             # 终端美化
+
+# Async support (optional)
+aiohttp>=3.8.0           # 异步 HTTP
+
+# Logging
+python-json-logger==2.0.7 # JSON 格式日志
+
+# Development
+pytest==7.4.3            # 单元测试
+black==23.11.0           # 代码格式化
+
+# 重试机制（目前已注释相关代码，可选）
+# tenacity>=8.2.3
+
+# 测试相关（可选）
+# pytest>=7.4.4
+# pytest-asyncio>=0.23.3
+
+# 其他可能需要的包
+python-dateutil>=2.8.2
+requests-toolbelt>=1.0.0
+
+# GUI
+PyQt6>=6.6.1
+PyQtWebEngine>=6.6.0      # WebView支持
+qrcode>=7.4.2            # 二维码生成
+
+# 视频处理
+yt-dlp>=2023.12.30       # 视频下载
+ffmpeg-python>=0.2.0     # 音视频处理
+
+# 系统托盘
+pystray>=0.19.5          # 系统托盘支持
+Pillow>=10.1.0          # 图片处理

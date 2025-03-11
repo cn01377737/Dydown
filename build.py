@@ -2,25 +2,27 @@ import os
 import shutil
 import subprocess
 import requests
-import zipfile
+import tarfile
 from pathlib import Path
+from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
+from PySide6.QtGui import QIcon
 
 def download_ffmpeg():
     """下载FFmpeg"""
     print("正在下载FFmpeg...")
-    ffmpeg_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+    ffmpeg_url = "https://mirrors.tuna.tsinghua.edu.cn/ffmpeg/releases/ffmpeg-6.0.tar.xz"
     response = requests.get(ffmpeg_url, stream=True)
     
-    with open("ffmpeg.zip", "wb") as f:
+    with open("ffmpeg.tar.xz", "wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
                 f.write(chunk)
     
     print("正在解压FFmpeg...")
-    with zipfile.ZipFile("ffmpeg.zip", "r") as zip_ref:
-        zip_ref.extractall("installer/ffmpeg")
+    with tarfile.open("ffmpeg.tar.xz", "r:xz") as tar_ref:
+        tar_ref.extractall("installer/ffmpeg")
     
-    os.remove("ffmpeg.zip")
+    os.remove("ffmpeg.tar.xz")
 
 def copy_program_files():
     """复制程序文件到构建目录"""
@@ -41,7 +43,7 @@ def build_installer():
     print("正在构建安装程序...")
     
     # 确保NSIS已安装
-    nsis_path = r"C:\Program Files (x86)\NSIS\makensis.exe"
+    nsis_path = r"D:\Program Files (x86)\NSIS\makensis.exe"
     if not os.path.exists(nsis_path):
         print("错误：未找到NSIS，请先安装NSIS。")
         return False
@@ -77,5 +79,24 @@ def main():
         if os.path.exists("build"):
             shutil.rmtree("build")
 
+class TrayIcon(QSystemTrayIcon):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setIcon(QIcon("dydown/icon.ico"))
+        menu = QMenu()
+        menu.addAction("显示主窗口", self.show_main)
+        menu.addAction("退出", self.exit_app)
+        self.setContextMenu(menu)
+
+    def show_main(self):
+        self.parent().show()
+
+    def exit_app(self):
+        QApplication.quit()
+
 if __name__ == "__main__":
-    main() 
+    app = QApplication([])
+    tray = TrayIcon()
+    tray.show()
+    main()
+    app.exec()

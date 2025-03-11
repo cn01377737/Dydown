@@ -26,7 +26,7 @@ requests-toolbelt>=1.0.0
 
 # GUI
 PyQt6>=6.6.1
-PyQtWebEngine>=6.6.0      # WebView支持
+PyQtWebEngine>=5.15.0      # WebView支持
 qrcode>=7.4.2            # 二维码生成
 
 # 视频处理

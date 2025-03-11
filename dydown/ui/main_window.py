@@ -22,6 +22,19 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+
+        # 添加上下文菜单功能
+        self.setup_context_menu()
+
+    def setup_context_menu(self):
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
+    def show_context_menu(self, pos):
+        menu = QMenu(self)
+        multi_select_action = menu.addAction('多选')
+        quality_action = menu.addAction('选择画质')
+        action = menu.exec_(self.mapToGlobal(pos))
         
         # 创建左侧导航栏
         self.setup_sidebar()
@@ -30,6 +43,64 @@ class MainWindow(QMainWindow):
         # 创建主内容区域
         self.setup_main_content()
         main_layout.addWidget(self.content_stack)
+
+        # 视频卡片示例
+        self.video_card = QWidget()
+        self.video_card.setStyleSheet('background: white; border-radius: 8px; padding: 16px;')
+        card_layout = QVBoxLayout(self.video_card)
+
+        # 视频封面
+        self.cover_label = QLabel()
+        self.cover_label.setPixmap(QPixmap(':/images/default_cover.png'))
+        self.cover_label.setFixedSize(320, 180)
+        self.cover_label.setScaledContents(True)
+        card_layout.addWidget(self.cover_label)
+
+        # 视频信息
+        info_layout = QVBoxLayout()
+
+        # 分辨率
+        self.resolution_label = QLabel('分辨率: 1080p')
+        info_layout.addWidget(self.resolution_label)
+
+        # 作者
+        self.author_label = QLabel('作者: 测试作者')
+        info_layout.addWidget(self.author_label)
+
+        card_layout.addLayout(info_layout)
+        self.content_stack.addWidget(self.video_card)
+
+        # 登录窗口
+        self.login_dialog = LoginDialog(self)
+
+    def show_login_dialog(self):
+        self.login_dialog.show()
+
+        # 托盘图标
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon(':/images/icon.png'))
+        self.tray_icon.setToolTip('DyDown')
+
+        # 创建托盘菜单
+        tray_menu = QMenu()
+        show_action = tray_menu.addAction('显示')
+        quit_action = tray_menu.addAction('退出')
+        self.tray_icon.setContextMenu(tray_menu)
+
+        # 连接信号
+        show_action.triggered.connect(self.show)
+        quit_action.triggered.connect(self.close)
+
+        # 显示托盘图标
+        self.tray_icon.show()
+
+        # 下载进度
+        self.progress = QProgressBar()
+        self.progress.setMinimum(0)
+        self.progress.setMaximum(100)
+        self.progress.setValue(0)
+        self.progress.setFormat('下载进度: %p%')
+        self.tray_icon.setToolTip('下载进度: 0%')
         
         # 设置托盘图标
         self.setup_tray()
@@ -40,6 +111,32 @@ class MainWindow(QMainWindow):
         # 显示登录对话框
         if not self.login_dialog.is_logged_in():
             self.login_dialog.show()
+
+        # 托盘图标
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon(':/images/icon.png'))
+        self.tray_icon.setToolTip('DyDown')
+
+        # 创建托盘菜单
+        tray_menu = QMenu()
+        show_action = tray_menu.addAction('显示')
+        quit_action = tray_menu.addAction('退出')
+        self.tray_icon.setContextMenu(tray_menu)
+
+        # 连接信号
+        show_action.triggered.connect(self.show)
+        quit_action.triggered.connect(self.close)
+
+        # 显示托盘图标
+        self.tray_icon.show()
+
+        # 下载进度
+        self.progress = QProgressBar()
+        self.progress.setMinimum(0)
+        self.progress.setMaximum(100)
+        self.progress.setValue(0)
+        self.progress.setFormat('下载进度: %p%')
+        self.tray_icon.setToolTip('下载进度: 0%')
     
     def setup_sidebar(self):
         # 创建侧边栏框架
@@ -155,4 +252,4 @@ class MainWindow(QMainWindow):
                 2000
             )
         else:
-            event.accept() 
+            event.accept()

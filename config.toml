@@ -1,0 +1,16 @@
+[general]
+threads = 5
+music = true
+cover = true
+avatar = true
+resjson = true
+folderstyle = true
+
+[download]
+path = "downloads"
+retry_times = 3
+chunk_size = 8192
+timeout = 30
+
+[api]
+timeout = 10

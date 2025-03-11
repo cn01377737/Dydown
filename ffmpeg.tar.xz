@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>清华大学 TUNA 镜像站</title>
+    <link href="//cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style> body { padding-top: 40px; } </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="well">
+        <p lang="zh-cn">尊敬的访问者，</p>
+		<p lang="en">Dear visitor, </p>
+		<p lang="fr">Chère cliente, </p>
+		<p lang="ja">訪問者へ 、</p>
+		<p>&nbsp;</p>
+        <p lang="zh-cn">您好！</p>
+		<p lang="en">Hello! </p>
+		<p lang="fr">Bonjour! </p>
+		<p lang="ja">こんにちは ！</p>
+		<p>&nbsp;</p>
+        <p lang="zh-cn">我们检测到您所在的子网和/或所使用的客户端存在大量下载某些较大二进制文件的行为，为保证用户的正常使用，我们阻断了此类请求。</p>
+		<p lang="en">We have detected enormous traffic from your network or client and have blocked your requests to ensure the quality of service for normal users.</p>
+		<p lang="fr">Nous avons détecté un grand nombre de téléchargements de certains fichiers binaires volumineux à partir de votre sous-réseau et/ou du client que vous utilisez et avons bloqué ces requêtes pour garantir un accès normal aux utilisateurs.</p>
+		<p lang="ja">お客様のサブネットおよび/またはクライアントで、特定の大きなバイナリのダウンロードを多数検出しました。お客様の通常の使用のためこれらのリクエストをブロックさせていただきます。</p>
+		<p>&nbsp;</p>
+		<p lang="zh-cn">您可以尝试更改网络环境或更换客户端；您也可以联系 <a href="mailto:support@tuna.tsinghua.edu.cn">support@tuna.tsinghua.edu.cn</a> 并附上下方的标识符。</p>
+		<p lang="en">You could try another network or client, or have your network administrator contact <a href="mailto:support@tuna.tsinghua.edu.cn">support@tuna.tsinghua.edu.cn</a> with the identifier below.</p>
+		<p lang="fr">Vous pouvez essayer de modifier votre environnement réseau ou de changer de client ; vous pouvez également contacter <a href="mailto:support@tuna.tsinghua.edu.cn">support@tuna.tsinghua.edu.cn</a> avec l'identifiant ci-dessous.</p>
+		<p lang="ja">ネットワーク環境の変更、クライアントの変更などをお試しください。また、下記の識別子を用いて <a href="mailto:support@tuna.tsinghua.edu.cn">support@tuna.tsinghua.edu.cn</a> までご連絡ください。</p>
+		<p>&nbsp;</p>
+		<p><code>00000070 d75fccc27dc0d1026f2cb6b6e2d4cc4b</code></p>
+      </div>
+    </div>
+  </body>
+</html>

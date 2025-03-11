@@ -1,0 +1,84 @@
+#######################################
+# 说明:
+# 1. 井号(#)为注释
+# 2. 缩进严格对齐，使用空格缩进
+# 3. 请使用英文字符
+#######################################
+
+# 应用基础配置
+app:
+  name: douyin-downloader
+  version: 1.0.0
+  debug: false
+
+# 下载配置
+download:
+  max_concurrent: 3
+  chunk_size: 8192
+  retry_times: 3
+  timeout: 30
+
+# 日志配置
+logging:
+  level: INFO
+  file_path: logs/
+  max_size: 10485760  # 10MB
+  backup_count: 5
+
+# API配置
+api:
+  base_url: https://api.example.com
+  timeout: 10
+  retry_count: 3
+
+# 下载链接，支持多个链接
+link:
+  - "https://v.douyin.com/xxxxx/"
+  - "https://v.douyin.com/yyyyy/"
+
+# 下载保存路径，默认当前目录
+path: "./downloads"
+
+# 下载选项
+music: true      # 是否下载音乐
+cover: true      # 是否下载封面
+avatar: true     # 是否下载头像
+json: true       # 是否保存JSON数据
+folderstyle: true  # 是否使用文件夹风格保存
+
+# 下载模式设置
+mode: 
+  - "post"      # post:发布作品 like:点赞作品 mix:合集作品
+
+# 下载数量设置（0表示全部下载）
+number:
+  post: 0       # 发布作品下载数量
+  like: 0       # 点赞作品下载数量
+  allmix: 0     # 所有合集下载数量
+  mix: 0        # 单个合集下载数量
+  music: 0      # 音乐下载数量
+
+# 其他设置
+thread: 5       # 下载线程数
+database: true  # 是否使用数据库
+
+# 增量更新配置
+increase:
+  post: false       # 是否增量下载主页作品
+  like: false       # 是否增量下载喜欢作品
+  allmix: false     # 是否增量下载主页合集
+  mix: false        # 是否增量下载单个合集
+  music: false      # 是否增量下载音乐作品
+
+# Cookie配置（二选一）
+cookies:            # 键值对形式
+  msToken: xxxxxx
+  ttwid: xxxxxx
+  odin_tt: xxxxxx
+
+#cookie: "msToken=xxxxxx; ttwid=xxxxxx;"  # 字符串形式
+
+# 时间范围过滤（可选）
+start_time: "2023-01-01"  # 开始时间，格式：YYYY-MM-DD
+end_time: "now"           # 结束时间，使用"now"表示当前时间
+

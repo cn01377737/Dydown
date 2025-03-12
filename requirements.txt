@@ -2,6 +2,7 @@
 requests==2.31.0          # HTTP 请求库
 pyyaml==6.0.1            # YAML 配置支持
 rich==13.7.0             # 终端美化
+pywin32>=306
 
 # Async support (optional)
 aiohttp>=3.8.0,<4.0.0  # 支持HTTP/2的版本           # 异步 HTTP

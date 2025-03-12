@@ -9,17 +9,18 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
-    ['dydown\\main.py'],
+    ['dydown/main.py'],
     pathex=[],
+    hookspath=['hooks'],  # 新增hook路径
+    hiddenimports=['wmi', 'pywin32'],  # 显式声明隐藏导入
     binaries=binaries,
     datas=datas,
-    hiddenimports=hiddenimports,
-    hookspath=[],
-    hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
-    optimize=0,
+    added_files = [
+        (os.path.join(pyqt6_plugins_dir, 'platforms'), os.path.join('plugins', 'platforms')),
+    ]
 )
 pyz = PYZ(a.pure)
 

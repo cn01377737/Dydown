@@ -5,14 +5,46 @@ from PyQt6.QtGui import QPixmap, QIcon, QAction, QCursor
 
 class VideoCard(QWidget):
     download_requested = pyqtSignal(str, str)  # 信号：url, quality
-    
+    task_reordered = pyqtSignal(str, str)  # 新增拖拽排序信号：source_id, target_id
+
     def __init__(self, video_info: dict):
+        self.task_id = video_info.get('aweme_id', '')
+        self.setAcceptDrops(True)
+        self.drag_start_position = None
         super().__init__()
         self.video_info = video_info
         self.setup_ui()
         
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_start_position = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if not (event.buttons() & Qt.MouseButton.LeftButton):
+            return
+        if (event.pos() - self.drag_start_position).manhattanLength() < QApplication.startDragDistance()):
+            return
+
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        mime_data.setText(self.task_id)
+        drag.setMimeData(mime_data)
+        drag.exec(Qt.DropAction.MoveAction)
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        source_id = event.mimeData().text()
+        self.task_reordered.emit(source_id, self.task_id)
+        event.acceptProposedAction()
+
     def setup_ui(self):
-        self.setFixedSize(300, 400)
+        self.dpi_scale = QApplication.primaryScreen().logicalDotsPerInch() / 96.0
+self.base_width = 300
+self.base_height = 400
+self.setFixedSize(int(self.base_width * self.dpi_scale), int(self.base_height * self.dpi_scale))
         self.setObjectName("videoCard")
         
         layout = QVBoxLayout(self)
@@ -21,7 +53,7 @@ class VideoCard(QWidget):
         
         # 封面图片
         self.cover = QLabel()
-        self.cover.setFixedSize(300, 200)
+        self.cover.setFixedSize(int(300 * self.dpi_scale), int(200 * self.dpi_scale))
         self.cover.setScaledContents(True)
         if "cover_url" in self.video_info:
             pixmap = QPixmap(self.video_info["cover_url"])
@@ -42,7 +74,7 @@ class VideoCard(QWidget):
         # 作者信息
         author_layout = QHBoxLayout()
         author_avatar = QLabel()
-        author_avatar.setFixedSize(24, 24)
+        author_avatar.setFixedSize(int(24 * self.dpi_scale), int(24 * self.dpi_scale))
         if "author_avatar" in self.video_info:
             avatar_pixmap = QPixmap(self.video_info["author_avatar"])
             author_avatar.setPixmap(avatar_pixmap.scaled(24, 24, Qt.AspectRatioMode.KeepAspectRatio))
@@ -68,26 +100,20 @@ class VideoCard(QWidget):
         # 设置样式
         self.setStyleSheet("""
             #videoCard {
-                background-color: white;
+                background-color: #FFFFFF;
                 border-radius: 8px;
-                border: 1px solid #e0e0e0;
-            }
-            #videoCard:hover {
-                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-            }
-            #infoContainer {
-                padding: 12px;
+                border: 1px solid #E5E9EF;
+                box-shadow: 0 2px 12px rgba(0, 161, 214, 0.1);
             }
             #downloadButton {
-                background-color: #ee1d52;
+                background-color: #00A1D6;
                 color: white;
-                border: none;
                 border-radius: 4px;
-                padding: 8px;
-                font-weight: bold;
+                padding: 8px 16px;
+                font-weight: 500;
             }
             #downloadButton:hover {
-                background-color: #dc1a4a;
+                background-color: #008CBA;
             }
         """)
     
@@ -131,4 +157,4 @@ class VideoCard(QWidget):
     
     def copy_video_link(self):
         if "url" in self.video_info:
-            QApplication.clipboard().setText(self.video_info["url"]) 
+            QApplication.clipboard().setText(self.video_info["url"])

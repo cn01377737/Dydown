@@ -13,4 +13,28 @@ chunk_size = 8192
 timeout = 30
 
 [api]
-timeout = 10
+endpoint = "https://www.douyin.com/"
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+aid = "6383"
+timeout = 10  # 保留原有超时设置
+
+[download]
+path = "downloads/DyDown"
+threads = 5
+retries = 3
+timeout = 30
+chunk_size = 8192  # 保留原有分块大小
+
+[async]
+max_connections = 100
+queue_size = 1000
+
+[signature]
+version = "1.0"
+key = "web_abcdef123456"
+
+[system]
+advanced_mode = false  # 新增高级模式开关
+ffmpeg_auto_detect = true  # 新增自动检测开关
+tray_icon = "dydown/icon.ico"
+log_level = "INFO"

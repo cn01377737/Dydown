@@ -12,6 +12,9 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from pathlib import Path
 import logging
+import os
+import sys
+import platform  # 新增导入
 
 # 配置logger
 logging.basicConfig(
@@ -212,6 +215,10 @@ def validate_config(config: dict) -> bool:
 
 
 def main():
+    # 配置jemalloc内存分配器（Linux环境）
+    if platform.system() == 'Linux':
+        os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libjemalloc.so.2'
+    
     start = time.time()
 
     # 配置初始化
@@ -428,8 +435,8 @@ if ASYNC_SUPPORT:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status == 200:
-                    with open(path, 'wb') as f:
-                        f.write(await response.read())
+                    async with aiofiles.open(path, 'wb') as f:
+                        await f.write(await response.read())
                     return True
         return False
 
@@ -463,3 +470,19 @@ def update_config_from_args(args):
 
 if __name__ == "__main__":
     main()
+
+# 新增性能测试命令
+parser_test = subparsers.add_parser('test', help='运行测试套件')
+parser_test.add_argument('--performance', action='store_true', help='运行性能基准测试')
+
+# 现有命令处理逻辑
+if args.command == 'test' and args.performance:
+    os.system('scripts\\run_perf_test.bat')
+    else:
+        douyin_logger.warning(f"[  警告  ]:未知的链接类型: {key_type}")
+    except Exception as e:
+        douyin_logger.error(f"处理链接时出错: {str(e)}")
+
+# 更新requirements.txt增加jemalloc安装项
+# requirements.txt新增内容：
+# jemalloc==5.3.0; sys_platform == 'linux'

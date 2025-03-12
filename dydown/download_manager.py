@@ -21,6 +21,8 @@ class DownloadTask:
     progress: float = 0
     title: Optional[str] = None
     error_message: Optional[str] = None
+    author_id: Optional[str] = None
+    author_name: Optional[str] = None
 
 class DownloadManager:
     def __init__(self, max_concurrent_downloads: int = 3):
@@ -56,9 +58,12 @@ class DownloadManager:
                 task.status = TaskStatus.DOWNLOADING
                 self.active_tasks.append(task)
             
+            author_dir = Path(task.save_path) / utils.replaceStr(f"{task.author_name}_{task.author_id}")
+            author_dir.mkdir(parents=True, exist_ok=True)
+            
             ydl_opts = {
                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                'outtmpl': f'{task.save_path}/%(title)s.%(ext)s',
+                'outtmpl': f'{author_dir}/%(title)s.%(ext)s',
                 'progress_hooks': [lambda d: self._progress_hook(task, d)],
             }
             
@@ -93,4 +98,4 @@ class DownloadManager:
             self.task_queue.put(task)
     
     def get_all_tasks(self) -> List[DownloadTask]:
-        return self.active_tasks + list(self.task_queue.queue) + self.completed_tasks 
+        return self.active_tasks + list(self.task_queue.queue) + self.completed_tasks

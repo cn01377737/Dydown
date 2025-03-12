@@ -27,6 +27,44 @@ console = Console()
 
 class Download(object):
     def __init__(self, thread=5, music=True, cover=True, avatar=True, resjson=True, folderstyle=True):
+        # 自动检测ffmpeg路径
+        self.ffmpeg_path = self._detect_ffmpeg()
+
+    def _detect_ffmpeg(self):
+        """自动检测ffmpeg安装路径"""
+        import platform
+        import shutil
+        
+        # 优先检测环境变量中的ffmpeg
+        ffmpeg_path = shutil.which('ffmpeg')
+        if ffmpeg_path:
+            return ffmpeg_path
+        
+        # 根据不同平台查找默认安装路径
+        system = platform.system()
+        if system == 'Windows':
+            # Windows下查找常见安装路径
+            for path in ['C:\Program Files\ffmpeg\bin\ffmpeg.exe',
+                        'C:\ffmpeg\bin\ffmpeg.exe',
+                        'D:\ffmpeg\bin\ffmpeg.exe']:
+                if os.path.exists(path):
+                    return path
+        elif system == 'Linux':
+            # Linux下查找常见安装路径
+            for path in ['/usr/bin/ffmpeg',
+                        '/usr/local/bin/ffmpeg',
+                        '/opt/ffmpeg/bin/ffmpeg']:
+                if os.path.exists(path):
+                    return path
+        elif system == 'Darwin':  # macOS
+            # macOS下查找常见安装路径
+            for path in ['/usr/local/bin/ffmpeg',
+                        '/opt/homebrew/bin/ffmpeg',
+                        '/Applications/ffmpeg/ffmpeg']:
+                if os.path.exists(path):
+                    return path
+        
+        return None
         self.thread = thread
         self.music = music
         self.cover = cover
@@ -188,7 +226,9 @@ class Download(object):
 
     def download_with_resume(self, url: str, filepath: Path, desc: str) -> bool:
         """支持断点续传的下载方法"""
-        file_size = filepath.stat().st_size if filepath.exists() else 0
+        # 多平台路径处理
+filepath = Path(str(filepath).replace('\\', '/'))  # 统一路径分隔符
+file_size = filepath.stat().st_size if filepath.exists() else 0
         headers = {'Range': f'bytes={file_size}-'} if file_size > 0 else {}
         
         for attempt in range(self.retry_times):
@@ -196,7 +236,14 @@ class Download(object):
                 response = requests.get(url, headers={**douyin_headers, **headers}, 
                                      stream=True, timeout=self.timeout)
                 
-                if response.status_code not in (200, 206):
+                # 处理HTTP 429 Too Many Requests
+if response.status_code == 429:
+    retry_after = int(response.headers.get('Retry-After', 5))
+    logger.warning(f'HTTP 429 Too Many Requests, 将在 {retry_after} 秒后重试')
+    time.sleep(retry_after)
+    continue
+
+if response.status_code not in (200, 206):
                     raise Exception(f"HTTP {response.status_code}")
                     
                 total_size = int(response.headers.get('content-length', 0)) + file_size
@@ -223,26 +270,33 @@ class Download(object):
 
 
 class DownloadManager:
+    __slots__ = ['executor']
+    
     def __init__(self, max_workers=3):
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
     
     def download_with_resume(self, url, filepath, callback=None):
-        # 检查是否存在部分下载的文件
         file_size = os.path.getsize(filepath) if os.path.exists(filepath) else 0
-        
         headers = {'Range': f'bytes={file_size}-'}
         
-        response = requests.get(url, headers=headers, stream=True)
-        total_size = int(response.headers.get('content-length', 0))
-        
-        mode = 'ab' if file_size > 0 else 'wb'
-        
-        with open(filepath, mode) as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-                    if callback:
-                        callback(len(chunk))
+        with requests.get(url, headers=headers, stream=True) as response:
+            response.raise_for_status()
+            total_size = int(response.headers.get('content-length', 0)) + file_size
+            
+            mode = 'ab' if file_size > 0 else 'wb'
+            with open(filepath, mode) as f, tqdm(
+                initial=file_size,
+                total=total_size,
+                unit='B',
+                unit_scale=True,
+                desc=os.path.basename(filepath)
+            ) as pbar:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        pbar.update(len(chunk))
+                        if callback:
+                            callback(len(chunk))
 
 
 if __name__ == "__main__":

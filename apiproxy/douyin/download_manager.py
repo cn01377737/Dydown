@@ -14,6 +14,12 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskPr
 from rich.panel import Panel
 from rich.text import Text
 from rich import print as rprint
+from prometheus_client import start_http_server, Summary, Gauge
+
+# Prometheus监控指标
+DOWNLOAD_SPEED = Gauge('download_speed_bytes', '实时下载速度')
+QUEUE_SIZE = Gauge('download_queue_size', '当前下载队列长度')
+REQUEST_TIME = Summary('request_processing_seconds', '请求处理时间')
 
 from apiproxy.douyin import douyin_headers
 from apiproxy.common import utils
@@ -23,6 +29,22 @@ console = Console()
 
 class DownloadManager:
     def __init__(self, thread=5, music=True, cover=True, avatar=True, resjson=True, folderstyle=True):
+        # 自动检测ffmpeg路径
+        self.ffmpeg_path = self._detect_ffmpeg()
+        if self.ffmpeg_path:
+            logger.info(f"✅ FFmpeg路径已自动检测: {self.ffmpeg_path}")
+        else:
+            logger.warning("⚠️  未检测到FFmpeg路径，部分功能可能受限")
+
+        # 在下载信息面板添加FFmpeg状态显示
+        self.console.print(Panel(
+            Text.assemble(
+                ("FFmpeg状态: ", "bold cyan"),
+                ("已就绪" if self.ffmpeg_path else "未配置", "green" if self.ffmpeg_path else "yellow")
+            ),
+            title="系统检测",
+            border_style="cyan"
+        ))
         self.thread = thread
         self.music = music
         self.cover = cover
@@ -36,6 +58,8 @@ class DownloadManager:
             BarColumn(),
             TaskProgressColumn(),
             TimeRemainingColumn(),
+            BarColumn(bar_width=None, complete_style='blue', finished_style='green', pulse_style='red'),
+            TextColumn("[retry]{task.fields[retry]}"),
             transient=True
         )
         self.retry_times = 3
@@ -43,6 +67,7 @@ class DownloadManager:
         self.timeout = 30
 
     def _download_media(self, url: str, path: Path, desc: str) -> bool:
+        retry_count = 0
         if path.exists():
             self.console.print(f"[cyan]⏭️  跳过已存在: {desc}[/]")
             return True

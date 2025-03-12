@@ -79,7 +79,12 @@ class DownloadManagerWidget(QWidget):
     def parse_url(self):
         url = self.url_input.text().strip()
         if not url:
-            QMessageBox.warning(self, "错误", "请输入视频链接")
+            self.show_step_error("输入为空", "请粘贴抖音视频链接", "检测到空白输入", 1)
+            return
+        
+        # 新增URL格式验证
+        if not url.startswith(('https://v.douyin.com', 'https://www.douyin.com')):
+            self.show_step_error("链接格式错误", "请使用正确的抖音分享链接", "检测到非法格式", 2)
             return
         
         # TODO: 实现视频链接解析
@@ -113,3 +118,18 @@ class DownloadManagerWidget(QWidget):
         task = self.download_manager.add_task(url, save_path)
         
         # TODO: 更新下载进度UI 
+    
+    def show_step_error(self, title, description, step_detail, step):
+        error_dialog = QDialog(self)
+        error_dialog.setWindowTitle(f"错误处理 - 第{step}步")
+        layout = QVBoxLayout()
+        
+        lbl_title = QLabel(f"<b>{title}</b>")
+        lbl_desc = QLabel(description)
+        lbl_step = QLabel(f"当前进度: {step_detail}")
+        
+        layout.addWidget(lbl_title)
+        layout.addWidget(lbl_desc)
+        layout.addWidget(lbl_step)
+        error_dialog.setLayout(layout)
+        error_dialog.exec()

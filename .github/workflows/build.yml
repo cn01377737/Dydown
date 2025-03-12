@@ -1,0 +1,48 @@
+name: Build Windows Installer
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'dydown/**'
+      - 'build.py'
+      - 'installer/**'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Build with PyInstaller
+      run: python build.py
+
+    - name: Install NSIS
+      uses: crazy-max/ghaction-nsis@v3
+      with:
+        version: '3.08'
+
+    - name: Compile installer
+      run: |
+        makensis -V4 -DAPP_VERSION=${{ github.run_number }} installer/installer.nsi
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: DyDown_Installer
+        path: |
+          dist/*.exe
+          installer/Output/*.exe

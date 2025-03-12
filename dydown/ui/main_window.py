@@ -11,17 +11,37 @@ from .settings_widget import SettingsWidget
 from .tray_icon import TrayIcon
 
 class MainWindow(QMainWindow):
+    theme_changed = pyqtSignal(bool)
+
     def __init__(self):
         super().__init__()
+        self.init_ui()
+        self.dark_mode = False
+        # 初始化弹幕预览悬浮窗
+        self.danmu_preview = QLabel(self)
+        self.danmu_preview.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
+        self.danmu_preview.setAttribute(Qt.WA_TranslucentBackground)
+        self.danmu_preview.hide()
+
+    def init_ui(self):
         self.setWindowTitle("抖音视频下载器")
         self.setMinimumSize(1200, 800)
         
         # 创建主布局
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
-        main_layout = QHBoxLayout(main_widget)
+        main_layout = QVBoxLayout(main_widget)  # 改为垂直布局
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+
+        # 添加状态监控栏
+        status_bar = QFrame()
+        status_bar.setObjectName("statusBar")
+        status_layout = QHBoxLayout(status_bar)
+        status_layout.addWidget(QLabel("CPU: 正在获取..."))
+        status_layout.addWidget(QLabel("内存: 正在获取..."))
+        status_layout.addWidget(QLabel("下载速度: 0B/s"))
+        main_layout.addWidget(status_bar)
 
         # 添加上下文菜单功能
         self.setup_context_menu()
@@ -253,3 +273,93 @@ class MainWindow(QMainWindow):
             )
         else:
             event.accept()
+        # 添加悬浮窗交互
+        self.plot_widget.scene().sigMouseMoved.connect(self.show_danmu_preview)
+
+    def show_danmu_preview(self, pos):
+        # 添加动画效果
+        self.danmu_preview.setStyleSheet('''
+            QLabel {{
+                background: {bg}; 
+                color: {text};
+                border: 1px solid {border};
+                border-radius: 4px;
+                padding: 8px;
+                opacity: 0;
+            }}
+        '''.format(**self.current_theme))
+        self.danmu_preview.show()
+        # 渐显动画
+        self.fade_in = QPropertyAnimation(self.danmu_preview, b"opacity")
+        self.fade_in.setDuration(200)
+        self.fade_in.setStartValue(0)
+        self.fade_in.setEndValue(1)
+        self.fade_in.start()
+
+    def toggle_theme(self):
+        self.dark_mode = not self.dark_mode
+        theme = 'dark' if self.dark_mode else 'light'
+        self.current_theme = self.css_vars[theme]
+        
+        # 更新图表颜色
+        self.plot_widget.getPlotItem().getViewBox().setBackgroundColor(self.current_theme['--bg-color'])
+        for line in self.plot_widget.listDataItems():
+            line.setPen(color=self.current_theme['--chart-line'])
+
+        self.apply_theme_stylesheet()
+        self.theme_changed.emit(self.dark_mode)
+
+    def apply_theme_stylesheet(self):
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                background-color: {self.current_theme['--bg-color']};
+            }}
+            QListView, QTextEdit, QLineEdit {{
+                border: 1px solid {self.current_theme['--border-color']};
+                background-color: {self.current_theme['--bg-color']};
+                color: {self.current_theme['--text-color']};
+            }}
+            QPushButton {{
+                background-color: {self.current_theme['--bg-color']};
+                color: {self.current_theme['--text-color']};
+                border: 1px solid {self.current_theme['--border-color']};
+                padding: 5px;
+                border-radius: 4px;
+            }}
+        """)
+
+    def setup_tutorial(self):
+        # 创建教程遮罩层
+        self.tutorial_overlay = QWidget(self)
+        self.tutorial_overlay.setObjectName("tutorialOverlay")
+        self.tutorial_overlay.setGeometry(self.rect())
+        
+        # 步骤提示气泡
+        self.tutorial_bubble = QFrame(self.tutorial_overlay)
+        self.tutorial_bubble.setObjectName("tutorialBubble")
+        bubble_layout = QVBoxLayout(self.tutorial_bubble)
+        
+        self.step_label = QLabel()
+        self.step_content = QLabel()
+        self.next_btn = QPushButton("下一步")
+        
+        bubble_layout.addWidget(self.step_label)
+        bubble_layout.addWidget(self.step_content)
+        bubble_layout.addWidget(self.next_btn)
+        
+        # 设置样式
+        self.tutorial_overlay.setStyleSheet("""
+            #tutorialOverlay {
+                background-color: rgba(0, 0, 0, 0.7);
+            }
+            #tutorialBubble {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                    stop:0 #00A1D6, stop:1 #008CBA);
+                border-radius: 8px;
+                padding: 20px;
+                color: white;
+            }
+        """)
+        
+    def show_tutorial(self):
+        self.tutorial_overlay.show()

@@ -40,7 +40,7 @@ class ProgressCallback:
 
 class VideoDownloader:
     """视频下载器"""
-    def __init__(self, max_workers: int = 3):
+    def __init__(self, max_workers: int = (os.cpu_count() or 1) * 2):
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.progress_callback = ProgressCallback()
         self.tasks: Dict[str, DownloadTask] = {}
@@ -143,4 +143,4 @@ class MediaProcessor:
             
         except ffmpeg.Error as e:
             print(f"提取音频失败: {e.stderr.decode()}")
-            raise 
+            raise

@@ -1,18 +1,67 @@
 import sys
 import os
+import platform
+import ctypes
+import winreg
+import wmi
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                            QPushButton, QSystemTrayIcon, QMenu, QLineEdit,
-                           QProgressBar, QListWidget, QListWidgetItem, QMessageBox)
+                           QProgressBar, QListWidget, QListWidgetItem, QMessageBox, QDialog, QLabel, QCheckBox, QDialogButtonBox)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
-from login_manager import LoginManager
-from download_manager import DownloadManager, DownloadTask, TaskStatus
+from .auth.manager import AuthManager
+from .downloader.manager import DownloadManager, DownloadTask, TaskStatus
 
 class DouYinDownloader(QMainWindow):
     def __init__(self):
         super().__init__()
+        
+        # 系统兼容性检测
+        self.check_system_compatibility()
+
+    def check_tpm_version(self):
+        try:
+            c = wmi.WMI()
+            tpm = c.Win32_Tpm()[0]
+            return tpm.SpecVersion.split(',')[0] >= '2.0'
+        except IndexError:
+            print("TPM设备未找到，请确认系统支持TPM 2.0")
+            return False
+        except Exception as e:
+            print(f"TPM检测失败: {str(e)}")
+            return False
+
+    def check_system_compatibility(self):
+        # Windows版本检测
+        if not self.check_windows_version():
+            QMessageBox.critical(None, '系统不兼容', '需要Windows 11 21H2及以上版本才能运行')
+            sys.exit(1)
+            
+        # TPM 2.0检测（改为警告提示而非强制退出）
+        if not self.check_tpm_version():
+            QMessageBox.warning(None, '安全提示', '建议启用TPM 2.0以获得完整安全功能')
+            
+        # 配置长路径支持
+        self.enable_long_path_support()
+
+    def enable_long_path_support(self):
+        try:
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 
+                                r'SYSTEM\CurrentControlSet\Control\FileSystem',
+                                0, winreg.KEY_WRITE)
+            winreg.SetValueEx(key, 'LongPathsEnabled', 0, winreg.REG_DWORD, 1)
+            winreg.CloseKey(key)
+        except Exception as e:
+            print(f"注册表修改失败: {e}")
+
+    def check_windows_version(self):
+        version = platform.uname().version.split('.')
+        major, minor, build = int(version[0]), int(version[1]), int(version[2])
+        # 检测Windows 11 build 22000及以上
+        return (major > 10) or (major == 10 and build >= 22000)
+        
         self.setWindowTitle("抖音视频下载器")
         self.setGeometry(100, 100, 800, 600)
         
@@ -44,10 +93,10 @@ class DouYinDownloader(QMainWindow):
         self.download_manager.on_progress_callback = self.update_progress
         self.download_manager.start_workers()
         
-        # 初始化登录管理器
-        self.login_manager = LoginManager(self.webview)
-        self.login_manager.login_success.connect(self.on_login_success)
-        self.login_manager.login_failed.connect(self.on_login_failed)
+        # 初始化认证管理器
+        self.auth_manager = AuthManager(self.webview)
+        self.auth_manager.login_success.connect(self.on_login_success)
+        self.auth_manager.login_failed.connect(self.on_login_failed)
         
         # 初始化系统托盘
         self.setup_system_tray()
@@ -158,14 +207,39 @@ class DouYinDownloader(QMainWindow):
         event.ignore()
         self.hide()
 
-def main():
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)  # 关闭窗口时不退出应用
+    
+    # 首次运行声明
+    settings = QSettings('Dydown', 'Preferences')
+    if not settings.value('disclaimer_accepted', False, type=bool):
+        dialog = QDialog()
+        dialog.setWindowTitle('免责声明')
+        layout = QVBoxLayout()
+        
+        text = QLabel('''欢迎使用本软件，请仔细阅读以下条款：
+
+1. 本软件仅供个人学习研究使用，禁止用于商业用途
+2. 下载内容24小时内须删除，违规使用责任自负
+3. 开发者不承担用户滥用造成的法律责任''')
+        checkbox = QCheckBox('我已阅读并同意上述条款')
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        
+        buttons.accepted.connect(lambda: settings.setValue('disclaimer_accepted', True))
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        checkbox.stateChanged.connect(lambda state: buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(state == 2))
+        
+        layout.addWidget(text)
+        layout.addWidget(checkbox)
+        layout.addWidget(buttons)
+        dialog.setLayout(layout)
+        
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            sys.exit(1)
     
     window = DouYinDownloader()
     window.show()
-    
     sys.exit(app.exec())
-
-if __name__ == "__main__":
-    main() 
